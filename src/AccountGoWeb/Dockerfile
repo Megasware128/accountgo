@@ -1,42 +1,27 @@
-FROM mcr.microsoft.com/dotnet/core/sdk AS build-env
+#See https://aka.ms/containerfastmode to understand how Visual Studio uses this Dockerfile to build your images for faster debugging.
+
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-buster-slim AS base
 WORKDIR /app
+EXPOSE 80
+RUN curl -sL https://deb.nodesource.com/setup_10.x |  bash -
+RUN apt-get install -y nodejs
 
-COPY ./src/Dto Dto
-COPY ./src/Infrastructure Infrastructure
-COPY ./src/AccountGoWeb AccountGoWeb
-COPY ./src/Modules Modules
-COPY ./Directory.Build.props .
-COPY ./Directory.Build.targets .
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1-buster AS build
+RUN curl -sL https://deb.nodesource.com/setup_10.x |  bash -
+RUN apt-get install -y nodejs
+WORKDIR /src
+COPY ["src/AccountGoWeb/AccountGoWeb.csproj", "src/AccountGoWeb/"]
+COPY ["src/Infrastructure/Infrastructure.csproj", "src/Infrastructure/"]
+COPY ["src/Dto/Dto.csproj", "src/Dto/"]
+RUN dotnet restore "src/AccountGoWeb/AccountGoWeb.csproj"
+COPY . .
+WORKDIR "/src/src/AccountGoWeb"
+RUN dotnet build "AccountGoWeb.csproj" -c Release -o /app/build
 
-# APIURLSPA and NODE_ENV variables are for webpack used. http://accountgo.net/spaproxy?endpoint=, http://localhost:8000/api
-ENV APIURLSPA http://container-test.azurewebsites.net/spaproxy?endpoint=
-ENV NODE_ENV Production
-ENV NODE_VERSION 10.15.1
-ENV NODE_DOWNLOAD_SHA ca1dfa9790876409c8d9ecab7b4cdb93e3276cedfc64d56ef1a4ff1778a40214
+FROM build AS publish
+RUN dotnet publish "AccountGoWeb.csproj" -c Release -o /app/publish
 
-RUN curl -SL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.gz" --output nodejs.tar.gz \
-    && echo "$NODE_DOWNLOAD_SHA nodejs.tar.gz" | sha256sum -c - \
-    && tar -xzf "nodejs.tar.gz" -C /usr/local --strip-components=1 \
-    && rm nodejs.tar.gz \
-    && ln -s /usr/local/bin/node /usr/local/bin/nodejs
-
-### Add all modules here. TODO: Improve in such a way all projects under Modules folder are automatically build.
-RUN dotnet build Modules/SampleModule/SampleModule.csproj -c Release
-
-WORKDIR /app/AccountGoWeb
-
-RUN npm install
-RUN npm rebuild node-sass
-RUN npm run css
-
-RUN dotnet publish -c Release
-
-FROM mcr.microsoft.com/dotnet/core/runtime:2.2-alpine3.9
-# This APIHOST environment variable is not a duplicate of above declaration
-ENV APIHOST api
+FROM base AS final
 WORKDIR /app
-EXPOSE 8000
-
-COPY --from=build-env /app/.build/bin/AccountGoWeb/Release/netcoreapp2.2/publish ./
-
+COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "AccountGoWeb.dll"]

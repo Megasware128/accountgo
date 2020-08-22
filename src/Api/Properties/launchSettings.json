@@ -1,4 +1,4 @@
-﻿{
+{
   "iisSettings": {
     "windowsAuthentication": false,
     "anonymousAuthentication": true,
@@ -19,12 +19,18 @@
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DBPASSWORD": "Str0ngPassword",
         "DBSERVER": "localhost",
-        "DBUSERID": "sa",
-        "DBPASSWORD": "Str0ngPassword"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DBUSERID": "sa"
       },
       "applicationUrl": "http://localhost:8001/"
+    },
+    "Docker": {
+      "commandName": "Docker",
+      "launchBrowser": true,
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "publishAllPorts": true
     }
   }
 }

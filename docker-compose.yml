@@ -1,4 +1,4 @@
-version: "3"
+version: "3.4"
 services:
     web:
         image: accountgo/accountgoweb
@@ -21,16 +21,16 @@ services:
         environment:
             - ASPNETCORE_ENVIRONMENT=Production
             - ASPNETCORE_URLS=http://+:8001
-            - DBSERVER=localhost
-            - DBUSERID=dbuser
+            - DBSERVER=db
+            - DBUSERID=sa
             - DBPASSWORD=Str0ngPassword
             - DBNAME=accountgodb
-    #     depends_on:
-    #         - db
-    # db:
-    #     image: microsoft/mssql-server-linux
-    #     ports:
-    #         - "1433:1433"
-    #     environment:
-    #         SA_PASSWORD: "Str0ngPassword"
-    #         ACCEPT_EULA: "Y"
+        depends_on:
+            - db
+    db:
+        image: microsoft/mssql-server-linux
+        ports:
+            - "1433:1433"
+        environment:
+            SA_PASSWORD: "Str0ngPassword"
+            ACCEPT_EULA: "Y"
